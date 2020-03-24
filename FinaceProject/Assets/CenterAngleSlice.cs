@@ -5,7 +5,7 @@ using System;
 using System.Linq;
 using System.Text;
 
-public class RotatedAngleSlice : MonoBehaviour
+public class CenterAngleSlice : MonoBehaviour
 {
     public const int CircleSegmentCount = 32;
 
@@ -14,6 +14,7 @@ public class RotatedAngleSlice : MonoBehaviour
 
     public float minDegree;
     public float maxDegree;
+    public float centerDegree = 45f;
 
     public Mesh testMesh;
     public GameObject testObject;
@@ -26,6 +27,7 @@ public class RotatedAngleSlice : MonoBehaviour
 
     public List<Vector3> vertexList;
 
+    [Range (0f,360f)]
     public float rotationValue;
 
     public Color color;
@@ -34,25 +36,26 @@ public class RotatedAngleSlice : MonoBehaviour
     // Start is called before the first frame update
     void Start()
     {
+        //CalcCenterDegrees(rotationValue);
 
+        GenerateSlice(rotationValue, radius);
     }
 
     // Update is called once per frame
     void Update()
     {
-        
-        List<Vector3> testVerts = new List<Vector3>();
+        //List<Vector3> testVerts = new List<Vector3>();
 
-        vertexList.Clear();
+        //vertexList.Clear();
 
-        CalcDegrees();
+        //CalcDegrees();
 
-        testObject.GetComponent<MeshFilter>().mesh = GenerateCircle(radius, vertexList);
+        //testObject.GetComponent<MeshFilter>().mesh = GenerateCircle(radius, vertexList);
 
-        testVerts.Clear();
-        
+        //testVerts.Clear();
+        CalcCenterDegrees(rotationValue);
+        GenerateSlice(rotationValue, radius);
     }
-
 
     public void GenerateSlice()
     {
@@ -92,15 +95,13 @@ public class RotatedAngleSlice : MonoBehaviour
         DegreeList = new List<float>();
 
         //CalcDegrees();
-        CalcDegrees(rotation);
+        //CalcDegrees(rotation);
+        CalcCenterDegrees(rotation);
 
         testObject.GetComponent<MeshFilter>().mesh = GenerateCircle(radius, vertexList);
 
 
     }
-
-
-
 
 
 
@@ -160,6 +161,37 @@ public class RotatedAngleSlice : MonoBehaviour
 
     }
 
+    public void CalcCenterDegrees(float rotateValue)
+    {
+        DegreeList.Clear();
+        float startDegree = 0f;
+
+        averageDegree = (maxDegree - minDegree) / CircleVertexCount;
+
+
+        minDegree = centerDegree - (rotateValue / 2);
+        maxDegree = centerDegree + (rotateValue / 2);
+
+        IEnumerable<double> testDouble = LinSpace(minDegree, maxDegree, CircleVertexCount, true);
+
+        List<float> testFloats = new List<float>();
+
+        foreach (double value in testDouble)
+        {
+            testFloats.Add((float)value);
+        }
+
+        for (int i = 0; i < CircleVertexCount; ++i)
+        {
+            DegreeList.Add(testFloats[i]);
+
+            startDegree += averageDegree;
+        }
+
+        DegreeList[0] = minDegree;
+        DegreeList[1] = minDegree;
+        DegreeList[DegreeList.Count - 1] = maxDegree;
+    }
 
 
     public static IEnumerable<double> LinSpace(double start, double stop, int num, bool endpoint = true)
@@ -192,6 +224,7 @@ public class RotatedAngleSlice : MonoBehaviour
     {
         return Enumerable.Range((int)start, count).Select(v => (double)v);
     }
+
     private void OnDrawGizmos()
     {
         for (int i = 0; i < DegreeList.Count; ++i)
@@ -255,64 +288,5 @@ public class RotatedAngleSlice : MonoBehaviour
 
         return circle;
     }
-
-
-    private Mesh TestGenerate(float rad, List<Vector3> vertices)
-    {
-        var circle = new Mesh();
-
-        var indices = new int[CircleIndexCount];
-
-
-        var segmentWidth = Mathf.PI * 2f / CircleSegmentCount;
-
-        var angle = 0f;
-
-
-
-        vertices.Add(Vector3.zero);
-
-        for (int i = 1; i < CircleVertexCount; ++i)
-        {
-            angle = DegreeList[i - 1] * Mathf.Deg2Rad;
-
-            Debug.Log("Degree List: " + DegreeList[i - 1] + "Degree List Size: " + DegreeList.Count);
-
-            vertices.Add(new Vector3(Mathf.Cos(angle) * rad, 0f, Mathf.Sin(angle) * rad));
-
-
-
-            //angle -= segmentWidth;
-
-            if (i > 1)
-            {
-                var j = (i - 2) * 3;
-                indices[j + 0] = 0;
-                indices[j + 1] = i - 1;
-                indices[j + 2] = i;
-            }
-
-
-        }
-
-
-        Color[] colors = new Color[vertices.Count];
-
-        for (int i = 0; i < vertices.Count; i++)
-        {
-            colors[i] = Color.red;
-        }
-
-
-
-        circle.SetVertices(vertices);
-        circle.colors = colors;
-        circle.SetIndices(indices, MeshTopology.Triangles, 0);
-        circle.RecalculateBounds();
-        circle.RecalculateNormals();
-
-        return circle;
-    }
-
 
 }
